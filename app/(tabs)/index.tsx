@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
@@ -8,6 +9,25 @@ import { ThemedView } from '@/components/themed-view';
 import { Link } from 'expo-router';
 
 export default function HomeScreen() {
+  const [response, setResponse] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function checkHealth() {
+    setLoading(true);
+    setResponse(null);
+    setError(null);
+    try {
+      const res = await fetch('https://datadog-sanity-vercel-demo-app.vercel.app/api/lab/health');
+      const json = await res.json();
+      setResponse(JSON.stringify(json, null, 2));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -65,6 +85,22 @@ export default function HomeScreen() {
         </ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
+        <ThemedText type="subtitle">Health Check</ThemedText>
+        <Pressable style={styles.button} onPress={checkHealth} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Check API Health</Text>
+          )}
+        </Pressable>
+        {error && <ThemedText style={styles.error}>{error}</ThemedText>}
+        {response && (
+          <ScrollView horizontal style={styles.codeBlock}>
+            <Text style={styles.codeText}>{response}</Text>
+          </ScrollView>
+        )}
+      </ThemedView>
+      <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
         <ThemedText>
           {`When you're ready, run `}
@@ -94,5 +130,29 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     position: 'absolute',
+  },
+  button: {
+    backgroundColor: '#632CA6',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  error: {
+    color: '#cc0000',
+  },
+  codeBlock: {
+    backgroundColor: '#1e1e1e',
+    borderRadius: 8,
+    padding: 12,
+  },
+  codeText: {
+    color: '#d4d4d4',
+    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }),
+    fontSize: 12,
   },
 });
