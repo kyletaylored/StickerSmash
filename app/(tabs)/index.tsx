@@ -6,6 +6,7 @@ import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { DdLogs } from '@datadog/mobile-react-native';
 import { Link } from 'expo-router';
 
 export default function HomeScreen() {
@@ -17,11 +18,15 @@ export default function HomeScreen() {
     setLoading(true);
     setResponse(null);
     setError(null);
+    const url = 'https://datadog-sanity-vercel-demo-app.vercel.app/api/lab/health';
+    DdLogs.info('health_check.start', { url });
     try {
-      const res = await fetch('https://datadog-sanity-vercel-demo-app.vercel.app/api/lab/health');
+      const res = await fetch(url);
       const json = await res.json();
+      DdLogs.info('health_check.success', { url, status: res.status });
       setResponse(JSON.stringify(json, null, 2));
     } catch (e) {
+      DdLogs.error('health_check.failed', { url, error: String(e) });
       setError(String(e));
     } finally {
       setLoading(false);
